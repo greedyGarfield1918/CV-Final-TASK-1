@@ -1,0 +1,209 @@
+# ============================================================
+# Project-1: Experiment Configuration & Hyperparameters
+# ============================================================
+# This file tracks all key parameters for the technical report.
+# All paths are relative to the project root.
+# ============================================================
+
+project:
+  name: "2DGS + AIGC Multi-Source Asset Generation & Real Scene Fusion"
+  description: >
+    Full pipeline: COLMAP SfM → 2DGS multi-view reconstruction (Object A),
+    Threestudio text-to-3D (Object B), Magic123 image-to-3D (Object C),
+    all fused into a 2DGS-reconstructed background scene (Garden).
+
+# Paths (relative to project root)
+paths:
+  data_dir: "data"
+  output_dir: "output"
+  frameworks_dir: "."  # Clone repos here
+
+experiments:
+
+  # ---- Object A: Multi-View Reconstruction via 2DGS ----
+  object_a_2dgs:
+    method: "2D Gaussian Splatting (2DGS)"
+    asset_type: "Real multi-view reconstruction"
+    input: "data/Cat_RGB (multi-view images)"
+    framework: "2d-gaussian-splatting (SIGGRAPH 2024)"
+
+    colmap_config:
+      feature_extractor: "SIFT"
+      max_image_size: 2000
+      max_num_features: 8192
+      matcher: "exhaustive"
+      use_gpu: true
+
+    training_config:
+      iterations: 30000
+      batch_size: 1
+      sh_degree: 3
+      position_lr_init: 0.00016
+      position_lr_final: 1.6e-07
+      position_lr_delay_mult: 0.01
+      position_lr_max_steps: 30000
+      feature_lr: 0.0025
+      opacity_lr: 0.05
+      scaling_lr: 0.005
+      rotation_lr: 0.001
+      percent_dense: 0.01
+      lambda_dssim: 0.2
+      lambda_normal: 0.05
+      lambda_dist: 1000.0
+      densification_interval: 100
+      opacity_reset_interval: 3000
+      densify_from_iter: 500
+      densify_until_iter: 15000
+      densify_grad_threshold: 0.0002
+      optimizer: "Adam"
+      loss_function: "L1 + SSIM + Normal + Distance regularization"
+      gpu_memory_estimate: "8-12 GB"
+      training_time_estimate: "40-60 min (RTX 4090)"
+
+  # ---- Object B: Text-to-3D via Threestudio ----
+  object_b_threestudio:
+    method: "Threestudio (DreamFusion-style)"
+    asset_type: "Text-to-3D generation"
+    input: "Text prompt"
+    text_prompt: "A cute cartoon cat with fluffy orange fur, sitting pose, 3D asset, highly detailed"
+    negative_prompt: "ugly, bad anatomy, blurry, low resolution, distorted"
+    framework: "threestudio"
+    base_model: "Stable Diffusion 2.1-base"
+
+    training_config:
+      max_steps: 10000
+      batch_size: 1
+      image_size: "64x64"
+      camera_distance_range: [1.5, 2.0]
+      fovy_range: [40, 70]
+      elevation_range: [-10, 45]
+      guidance_scale: 100
+      geometry_type: "implicit-volume"
+      geometry_convert: "dmtet"
+      density_bias: "blob_magic3d"
+      density_activation: "softplus"
+      pos_encoding: "ProgressiveBandHashGrid (16 levels, 2 features/level)"
+      optimizer: "Adam"
+      learning_rate: 0.001
+      loss_function: "SDS Loss (Score Distillation Sampling)"
+      gpu_memory_estimate: "16-24 GB"
+      training_time_estimate: "1.5-2 hrs (RTX 4090)"
+
+  # ---- Object C: Image-to-3D via Magic123 ----
+  object_c_magic123:
+    method: "Magic123"
+    asset_type: "Single-image-to-3D generation"
+    input: "Single 2D image (background removed)"
+    image_size: "Resized to 512x512"
+    framework: "Magic123 (ICLR 2024)"
+
+    stage1_config:
+      name: "Coarse (2D + 3D priors)"
+      iterations: 5000
+      guidance: ["SD", "zero123"]
+      sd_version: "1.5"
+      lambda_guidance: [1.0, 40]
+      guidance_scale: [100, 5]
+      optim: "adam"
+      fp16: true
+      cuda_ray: true
+
+    stage2_config:
+      name: "Refine (DMTet mesh)"
+      iterations: 3000
+      guidance: ["SD", "zero123"]
+      sd_version: "1.5"
+      lambda_guidance: [1.0, 40]
+      guidance_scale: [100, 5]
+      dmtet: true
+      optim: "adam"
+      fp16: true
+      cuda_ray: true
+
+    preprocessing:
+      background_removal: "rembg"
+      resize: "512x512 (maintain aspect ratio)"
+
+    gpu_memory_estimate: "12-16 GB"
+    training_time_estimate: "1-1.5 hrs (RTX 4090)"
+
+  # ---- Background: Garden Scene via 2DGS ----
+  background_2dgs:
+    method: "2D Gaussian Splatting (2DGS)"
+    asset_type: "Real scene reconstruction"
+    input: "Mip-NeRF 360 garden scene (images_4, 4x downsampled)"
+    framework: "2d-gaussian-splatting"
+
+    training_config:
+      iterations: 30000
+      batch_size: 1
+      sh_degree: 3
+      position_lr_init: 0.00016
+      position_lr_final: 1.6e-07
+      feature_lr: 0.0025
+      opacity_lr: 0.05
+      scaling_lr: 0.005
+      rotation_lr: 0.001
+      lambda_dssim: 0.2
+      lambda_normal: 0.05
+      lambda_dist: 1000.0
+      optimizer: "Adam"
+      loss_function: "L1 + SSIM + Normal + Distance regularization"
+      gpu_memory_estimate: "12-16 GB"
+      training_time_estimate: "1-1.5 hrs (RTX 4090)"
+
+  # ---- Scene Fusion ----
+  scene_fusion:
+    method: "PLY merge + 2DGS rasterizer"
+    description: >
+      Convert all assets to Gaussian point clouds (.ply format),
+      apply affine transformations, merge into single scene,
+      render multi-view video using 2DGS differentiable rasterizer.
+
+    object_placements:
+      object_a: { position: [-2.0, 0.0, 0.5], scale: 0.5, rotation_y: 0 }
+      object_b: { position: [0.0, 0.0, 0.5], scale: 0.4, rotation_y: 30 }
+      object_c: { position: [2.0, 0.0, 0.5], scale: 0.4, rotation_y: -30 }
+
+    camera_trajectory:
+      type: "spiral"
+      radius: 5.0
+      height_range: [0.5, 2.5]
+      num_views: 120
+      fov_y: 50.0
+      resolution: "1920x1080"
+      fps: 30
+
+  # ---- Alternative Fusion (nvdiffrast hybrid) ----
+  fusion_hybrid:
+    method: "2DGS rasterizer + nvdiffrast mesh rasterizer"
+    description: >
+      Hybrid approach: background + Object A rendered as 2DGS Gaussians,
+      Objects B and C rendered as meshes via nvdiffrast,
+      alpha-composited into final frame.
+    note: >
+      This approach keeps 2DGS objects as native Gaussians while
+      rendering AIGC mesh outputs directly, avoiding the need to
+      convert meshes to Gaussians.
+
+# ---- Evaluation Metrics ----
+evaluation_metrics:
+  geometry:
+    - "PSNR (Peak Signal-to-Noise Ratio)"
+    - "SSIM (Structural Similarity)"
+    - "LPIPS (Learned Perceptual Image Patch Similarity)"
+    - "Chamfer Distance (mesh-based)"
+  texture:
+    - "PSNR on texture-mapped renders"
+    - "FID (Frechet Inception Distance) for AIGC assets"
+  computational:
+    - "Training time (wall clock)"
+    - "GPU memory usage"
+    - "Model size (parameters / file size)"
+    - "Inference/render FPS"
+
+# ---- Logging ----
+logging:
+  tool: "SwanLab (recommended, CN-friendly) or WandB"
+  metrics: ["train/loss", "train/psnr", "val/psnr", "val/ssim", "val/lpips"]
+  artifacts: ["checkpoints", "rendered images", "final models"]

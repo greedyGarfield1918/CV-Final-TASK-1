@@ -1,0 +1,38 @@
+# ============================================================
+# 2DGS Environment Requirements
+# Python 3.8.18 | CUDA 11.8 | PyTorch 2.0.0
+# ============================================================
+
+# --- Core ML ---
+torch==2.0.0+cu118
+torchvision==0.15.0+cu118
+torchaudio==2.0.0+cu118
+ninja
+numpy
+scipy
+pip
+setuptools
+
+# --- 2DGS CUDA Extensions (built from source) ---
+# pip install -e submodules/diff-surfel-rasterization
+# pip install -e submodules/simple-knn
+
+# --- Data Processing ---
+open3d==0.18.0
+mediapy==1.1.2
+plyfile
+opencv-python
+scikit-image==0.21.0
+tqdm==4.66.2
+trimesh==4.3.2
+matplotlib
+imageio>=2.28.0
+imageio[ffmpeg]
+
+# --- Quality Metrics ---
+lpips==0.1.4
+
+# --- Logging & Monitoring ---
+tensorboard
+wandb
+swanlab

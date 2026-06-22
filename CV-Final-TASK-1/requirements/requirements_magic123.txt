@@ -1,0 +1,64 @@
+# ============================================================
+# Magic123 Environment Requirements
+# Python 3.10 | CUDA 11.8 | PyTorch 2.0.0
+# ============================================================
+
+# --- Core ML ---
+torch==2.0.0+cu118
+torchvision==0.15.0+cu118
+ninja
+numpy
+scipy
+scikit-learn
+matplotlib
+
+# --- Utilities ---
+tqdm
+rich
+easydict
+termcolor
+omegaconf
+pandas
+
+# --- Diffusion Models ---
+diffusers>=0.15,<0.18
+accelerate
+transformers>=4.25,<5.0
+huggingface_hub
+
+# --- Image Processing ---
+opencv-python
+imageio
+imageio-ffmpeg
+lpips
+rembg
+carvekit-colab
+pymatting
+pooch
+
+# --- 3D Processing ---
+xatlas
+PyMCubes
+trimesh>=3.20,<4.0
+pymeshlab>=2022.0
+nvdiffrast @ git+https://github.com/NVlabs/nvdiffrast.git
+git+https://github.com/openai/CLIP.git
+
+# --- Training ---
+torch-ema
+einops
+tensorboard
+tensorboardX
+pytorch-lightning
+wandb
+swanlab
+torchmetrics
+
+# --- Misc ---
+taming-transformers-rom1504
+kornia
+timm>=0.6,<0.7
+gdown
+sentencepiece
+psutil
+dearpygui

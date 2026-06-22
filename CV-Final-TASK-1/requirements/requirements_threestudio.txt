@@ -1,0 +1,51 @@
+# ============================================================
+# Threestudio Environment Requirements
+# Python 3.10 | CUDA 11.8 | PyTorch 2.0.0
+# ============================================================
+
+# --- Core ML ---
+torch==2.0.0+cu118
+torchvision==0.15.0+cu118
+lightning==2.0.0
+omegaconf==2.3.0
+jaxtyping
+typeguard
+
+# --- Diffusion Models ---
+diffusers>=0.18.0,<0.20.0
+transformers>=4.25,<5.0
+accelerate
+xformers==0.0.20
+bitsandbytes>=0.35,<0.40
+sentencepiece
+safetensors
+huggingface_hub>=0.23
+einops
+kornia
+taming-transformers-rom1504
+controlnet_aux
+
+# --- 3D Processing ---
+nerfacc @ git+https://github.com/KAIR-BAIR/nerfacc.git@v0.5.2
+nvdiffrast @ git+https://github.com/NVlabs/nvdiffrast.git
+envlight @ git+https://github.com/ashawkey/envlight.git
+libigl
+xatlas
+pysdf
+PyMCubes
+trimesh[easy]
+networkx
+
+# --- CLIP ---
+open-clip-torch
+git+https://github.com/openai/CLIP.git
+
+# --- Utilities ---
+opencv-python
+matplotlib
+imageio>=2.28.0
+imageio[ffmpeg]
+tensorboard
+wandb
+swanlab
+torchmetrics
